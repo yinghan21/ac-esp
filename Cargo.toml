@@ -1,0 +1,39 @@
+# ============================================================================
+# ac-esp（学习版）
+# 一个被注入进 AssaultCube 的 ESP：读游戏内存 → 算屏幕坐标 → 用 imgui 画框。
+# ============================================================================
+
+[package]
+name = "a"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+# 我们交付的是 dll（注入进游戏进程），不需要 exe，所以要 cdylib
+crate-type = ["cdylib"]
+
+[dependencies]
+# 【版本为什么这样写】
+# 写 "1" / "0.12" 是"兼容范围"（^ 语义：>=1.0.0,<2.0.0），再配合 Cargo.lock
+# 就能保证"今天编过的代码明天还能编过"。写 "*" 会因为上游发版而随时编不过。
+
+# 错误处理：用来把「初始化失败的原因」串起来，方便排查
+anyhow = "1"
+
+# imgui 的版本必须和 hudhook 内部依赖的 imgui 完全一致，否则 Ui 类型对不上，编译报错。
+# hudhook 0.9 → imgui 0.12：升级其中一个，就要把另一个一起对一遍。
+imgui = "0.12"
+
+# 渲染层：帮我们 hook 游戏的渲染函数，并在每一帧回调我们的代码。
+# 默认 feature 已包含 opengl3（AssaultCube 是 OpenGL 渲染），不用额外开。
+hudhook = "0.9"
+
+# Windows API 绑定。windows-sys 是"按 feature 裁剪"的，没开的模块不会被编译进来。
+windows-sys = { version = "0.61", features = [
+    "Win32_Foundation",                # HWND / RECT / WPARAM / LPARAM / LRESULT
+    "Win32_System_LibraryLoader",      # GetModuleHandleA：取游戏模块基址
+    "Win32_System_Memory",             # VirtualQuery：读内存前的安全检查
+    "Win32_System_SystemServices",     # DLL_PROCESS_ATTACH
+    "Win32_UI_Input_KeyboardAndMouse", # GetAsyncKeyState / VK_*：热键
+    "Win32_UI_WindowsAndMessaging",    # 窗口过程 / GetClientRect / ClipCursor
+] }
