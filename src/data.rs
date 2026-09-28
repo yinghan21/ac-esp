@@ -300,7 +300,7 @@ fn read_into(module_base: usize, snapshot: &mut Snapshot) {
         //   也不要把“偏移填错”变成“一个敌人都看不见”。
         let alive = match state {
             Some(s) => s == 0,
-            None => health.map_or(true, |hp| hp > 0),
+            None => health.map_or(false, |hp| hp > 0),
         };
 
         snapshot.players.push(Player {
